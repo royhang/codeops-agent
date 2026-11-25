@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeOps-Agent · Multi-Agent 排障控制台</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #34d399;
+      --amber: #fbbf24;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    h1 { font-size: 22px; color: #fff; }
+    .badge { font-size: 12px; background: #0c4a6e; color: var(--accent); padding: 4px 10px; border-radius: 999px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 74px;
+      background: #0f172a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+      resize: vertical;
+    }
+    .controls { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary { background: #334155; color: var(--text); font-weight: 500; font-size: 12px; }
+    .stream-log {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 12.5px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .ev-planner { color: var(--accent); }
+    .ev-tool_call { color: var(--amber); }
+    .ev-tool_result { color: #a7f3d0; }
+    .ev-reviewer { color: #c084fc; }
+    .ev-final { color: var(--green); }
+    .answer-box { white-space: pre-wrap; font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>CodeOps-Agent · Multi-Agent 排障控制台</h1>
+    <span class="badge">LangGraph-style StateGraph · MCP · Hybrid RAG · SSE</span>
+  </header>
+
+  <div class="card">
+    <textarea id="queryInput">线上报 ZeroDivisionError: float division by zero in calculate_discount_rate，请定位根因并给出修复方案。</textarea>
+    <div class="controls">
+      <button id="runBtn" onclick="runStream()">开始 SSE 流式排障</button>
+      <button class="secondary" onclick="setSample('多租户出现缓存串号，T_BETA 读到了 T_ALPHA 的订单摘要，请排查日志和代码定位原因。')">示例：缓存串号</button>
+      <button class="secondary" onclick="setSample('用户刚登录拿到的 SessionToken 被 401 拒绝，过期 token 反而能通过验证，请排查。')">示例：Token 过期反转</button>
+      <button class="secondary" onclick="setSample('支付 worker 线程池耗尽卡死，日志显示 PaymentGatewayClient.charge 无响应，请定位。')">示例：支付重试卡死</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:8px;font-size:15px;">实时执行轨迹 (SSE Events)</h3>
+    <div id="events" class="stream-log">等待执行...</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:8px;font-size:15px;">最终诊断报告</h3>
+    <div id="finalAnswer" class="answer-box">暂无结果</div>
+  </div>
+</div>
+
+<script>
+function setSample(txt) {
+  document.getElementById('queryInput').value = txt;
+}
+
+async function runStream() {
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query) return;
+  const eventsEl = document.getElementById('events');
+  const answerEl = document.getElementById('finalAnswer');
+  eventsEl.innerHTML = '';
+  answerEl.textContent = '排查中...';
+
+  const resp = await fetch('/api/v1/tasks/stream', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ query })
+  });
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop() || '';
+    for (const block of parts) {
+      const dataLine = block.split('\n').find(l => l.startsWith('data: '));
+      if (!dataLine) continue;
+      const ev = JSON.parse(dataLine.slice(6));
+      const div = document.createElement('div');
+      div.className = 'ev-' + ev.event_type;
+      div.textContent = `[${ev.event_type.toUpperCase()}] (${ev.node}) ` + JSON.stringify(ev.data);
+      eventsEl.appendChild(div);
+      eventsEl.scrollTop = eventsEl.scrollHeight;
+      if (ev.event_type === 'final') {
+        answerEl.textContent = ev.data.final_answer || '';
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>

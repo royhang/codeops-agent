@@ -1,0 +1,12 @@
+{"id": "rag_01", "query": "Why does calculate_discount_rate crash with ZeroDivisionError on free promotional orders?", "expected_file": "app/pricing.py", "expected_symbol": "calculate_discount_rate"}
+{"id": "rag_02", "query": "Where is payable amount computed after applying coupon discount?", "expected_file": "app/pricing.py", "expected_symbol": "compute_payable_amount"}
+{"id": "rag_03", "query": "Tenant isolation bug where tenant B reads tenant A cached order summary", "expected_file": "app/cache.py", "expected_symbol": "build_cache_key"}
+{"id": "rag_04", "query": "How does TenantCache store and retrieve order summaries?", "expected_file": "app/cache.py", "expected_symbol": "get_order_summary"}
+{"id": "rag_05", "query": "Freshly issued session token returns 401 unauthorized while expired token succeeds", "expected_file": "app/auth.py", "expected_symbol": "is_token_valid"}
+{"id": "rag_06", "query": "SessionToken dataclass fields issued_at and expires_at", "expected_file": "app/auth.py", "expected_symbol": "SessionToken"}
+{"id": "rag_07", "query": "OrderRepository list_orders returns all rows ignoring pagination page_size", "expected_file": "app/repository.py", "expected_symbol": "list_orders"}
+{"id": "rag_08", "query": "SQL injection risk in order status filter query builder", "expected_file": "app/repository.py", "expected_symbol": "build_filter_sql"}
+{"id": "rag_09", "query": "PaymentGatewayClient charge hangs forever without timeout or retry bound", "expected_file": "app/client.py", "expected_symbol": "charge"}
+{"id": "rag_10", "query": "Downstream payment transport wrapper class", "expected_file": "app/client.py", "expected_symbol": "PaymentGatewayClient"}
+{"id": "rag_11", "query": "Production falls back to sqlite local_dev.db even though ORDER_DB_URL is set", "expected_file": "app/config.py", "expected_symbol": "load_service_config"}
+{"id": "rag_12", "query": "FEATURE_FLAG_V2 false string evaluated as boolean True", "expected_file": "app/config.py", "expected_symbol": "load_service_config"}

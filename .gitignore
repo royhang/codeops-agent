@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment & local state
+.env
+.env.local
+*.db
+*.sqlite
+*.sqlite3
+.codeops_traces/
+traces/
+eval_reports/
+
+# IDE & OS
+.DS_Store
+.vscode/
+.idea/

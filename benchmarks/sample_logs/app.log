@@ -1,0 +1,6 @@
+2026-11-24T09:12:01Z ERROR [order-api] Unhandled exception in compute_payable_amount(order_id=ORD-9012): ZeroDivisionError: float division by zero at app/pricing.py:19 in calculate_discount_rate
+2026-11-24T09:15:44Z WARN  [cache-layer] Tenant isolation audit alert: tenant=T_BETA read order_summary belonging to tenant=T_ALPHA for order_id=10042 via TenantCache.get_order_summary (app/cache.py)
+2026-11-24T09:18:10Z ERROR [auth-service] Valid freshly issued SessionToken rejected (401 Unauthorized) while expired token accepted in is_token_valid (app/auth.py:16)
+2026-11-24T09:24:33Z ERROR [order-repo] Memory spike (1.8GB) in OrderRepository.list_orders: returned 184320 rows ignoring page=2 page_size=20; security scanner flagged raw SQL interpolation in build_filter_sql (app/repository.py)
+2026-11-24T09:31:05Z CRITICAL [payment-worker] Thread pool exhausted after 300s hang in PaymentGatewayClient.charge: unbounded retry loop without timeout against /v1/charge (app/client.py)
+2026-11-24T09:37:50Z ERROR [bootstrap] Production connected to sqlite:///local_dev.db despite ORDER_DB_URL set in env; FEATURE_FLAG_V2="false" evaluated as True in load_service_config (app/config.py)
